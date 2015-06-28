@@ -63,28 +63,29 @@ public class Sena_Plugin implements PlugInFilter {
 		int numParticles = 0;
 		int MIN_SIZE = 80;
 		
-		int SMALLEST = Integer.MAX_VALUE;
-		int LARGEST = -1;
 		
 		for(int i = 0; i < IMAGE_WIDTH; i++) {
 			for(int j = 0; j < IMAGE_HEIGHT; j++) {
 				if(ip.getPixel(i, j) == 255 && visited[i][j] == 0) {
 					
 					List<Pair> points = new ArrayList<Pair>();
-					IJ.log("Starting dfs at point "+i+" "+j);
+					IJ.log("\n\nStarting dfs at point "+i+" "+j);
 					bfs(i, j, ip, points);
 					if(points.size() < MIN_SIZE)
 						continue;
 					
 					numParticles++;
 					IJ.getImage().setRoi(Utils.makeRoi(points));
-					IJ.getProcessor().crop();
-					IJ.showMessage("Can you see the ROI in the image?");
+					
+
+					IJ.showMessage("Calculating Hu moments for image "+numParticles);
+					Hu_Moments hm = new Hu_Moments(IJ.getProcessor().crop(), ""+numParticles);
+					hm.calculateMoments();
 				}
 			}
 		}
 		
-		IJ.log("Found " +numParticles+" particles. Smallest: "+SMALLEST+". Largest: "+LARGEST);
+		IJ.log("Found " +numParticles+" particles.");
 	}
 		
 	public void run(ImageProcessor ip) {

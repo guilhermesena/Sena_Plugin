@@ -2,6 +2,9 @@ import ij.*;
 import ij.process.ImageProcessor;
 
 import java.lang.Math;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 
 /* Auxiliary function to calculate Hu's seven invariant moments, rotate image, etc
  * Author: Guilherme Sena
@@ -18,126 +21,145 @@ public class Hu_Moments {
 	private int IMAGE_HEIGHT;
 
 	
-	private double [][] A; //TODO: Convert to bits for optimization
-	private double area;
-	private double xc, yc;
+	private BigDecimal [][] A; //TODO: Convert to bits for optimization
+	private BigDecimal area;
+	private BigDecimal xc, yc;
 	private double angle;
-	private double [] I;
+	private BigDecimal [] I;
 	
 	
 	//Memorize calculations
-	private double [][] memM;
-	private double [][] memMu;
-	private double [][] memMuLine;
-	private double [][] memHeta;
+	private BigDecimal [][] memM;
+	private BigDecimal [][] memMu;
+	private BigDecimal [][] memMuLine;
+	private BigDecimal [][] memHeta;
 	
-	public Hu_Moments (ImageProcessor imp) {
+	//Name for debugging
+	private String name;
+	
+	public Hu_Moments (ImageProcessor imp, String name) {
 		this.imp = imp;
+		this.name= name;
+		
 		this.IMAGE_WIDTH = imp.getWidth();
 		this.IMAGE_HEIGHT = imp.getHeight();
-		A = new double[IMAGE_WIDTH] [IMAGE_HEIGHT];
+		
+		A = new BigDecimal[IMAGE_WIDTH] [IMAGE_HEIGHT];
+		
+		IJ.log("width = "+IMAGE_WIDTH+", height = "+IMAGE_HEIGHT);
 		for(int i = 0; i < IMAGE_WIDTH; i++) {
 			for (int j = 0; j < IMAGE_HEIGHT; j++) {
-				A[i][j] = (double) imp.getPixel(i, j);
+				A[i][j] = (imp.getPixel(i,j) == 128) ? BigDecimal.ONE : BigDecimal.ZERO;
 			}
 		}
 		
 		//LUT
-		memM = new double[MAX_VALUE][MAX_VALUE];
-		memMu = new double[MAX_VALUE][MAX_VALUE];
-		memMuLine = new double[MAX_VALUE][MAX_VALUE];
-		memHeta = new double[MAX_VALUE][MAX_VALUE];
+		memM = new BigDecimal[MAX_VALUE][MAX_VALUE];
+		memMu = new BigDecimal[MAX_VALUE][MAX_VALUE];
+		memMuLine = new BigDecimal[MAX_VALUE][MAX_VALUE];
+		memHeta = new BigDecimal[MAX_VALUE][MAX_VALUE];
 		for(int i = 0; i < MAX_VALUE; i++) {
 			for(int j = 0; j < MAX_VALUE; j++) {
-				memM[i][j] = -1.0;
-				memMu[i][j] = -1.0;
-				memMuLine[i][j] = -1.0;
-				memHeta[i][j] = -1.0;
+				memM[i][j] = null;
+				memMu[i][j] = null;
+				memMuLine[i][j] = null;
+				memHeta[i][j] = null;
 			}
 		}
 		
 		
 		//Recurrent values
 		area = M(0,0);
-		xc = M(1,0)/M(0,0);
-		yc = M(0,1)/M(0,0);
-		I = new double[7];
+		xc = M(1,0).divide(M(0,0), RoundingMode.HALF_DOWN);
+		yc = M(0,1).divide(M(0,0), RoundingMode.HALF_DOWN);
+		IJ.log("centroid = ("+xc+","+yc+")");
+		I = new BigDecimal[7];
 		angle = getAngle();
 		
 	}
 	
-	private double M(int p, int q) {
+	private BigDecimal M(int p, int q) {
 		
-		if(memM[p][q] >= 0.0f)
+		if(memM[p][q] != null)
 			return memM[p][q];
 		
-		double dp = (double) p;
-		double dq = (double) q;
-		int ans = 0;
+		BigDecimal ans = BigDecimal.ZERO;
 		for(int x = 0; x < IMAGE_WIDTH; x++) {
 			for(int y = 0; y < IMAGE_HEIGHT; y++) {
-				ans += Math.pow((double) x, p)*Math.pow((double) y, q)*A[x][y];
+				ans = ans.add(
+					(new BigDecimal(x)).pow(p).multiply(
+					(new BigDecimal(y)).pow(q)).multiply(A[x][y])
+				);
 			}
 		}
 		
 		memM[p][q] = ans;
-		
+		IJ.log("M("+p+","+q+") for image "+name+" = "+memM[p][q].toEngineeringString());
 		return ans;
 	}
 	
-	private double mu(int p, int q) {
+	private BigDecimal mu(int p, int q) {
 		
-		if(memMu[p][q] >= 0.0f) {
+		if(memMu[p][q] != null) {
 			return memMu[p][q];
 		}
 		
-		double dp = (double) p;
-		double dq = (double) q;
-		int ans = 0;
+		IJ.log("p = "+p+" q="+q);
+		BigDecimal ans = BigDecimal.ZERO;
 		for(int x = 0; x < IMAGE_WIDTH; x++) {
 			for(int y = 0; y < IMAGE_HEIGHT; y++) {
-				ans += Math.pow((double)x - xc, dp)*Math.pow((double)y - yc, dq)*A[x][y];
+				ans = ans.add (
+						(new BigDecimal(x).subtract(xc).pow(p)).multiply(
+								new BigDecimal(y).subtract(yc).pow(q)
+						).multiply(A[x][y])
+					);
 			}
 		}
 		
 		memMu[p][q] = ans;
-		
+		IJ.log("mu("+p+","+q+") for image "+name+" = "+memMu[p][q]);
 		return ans;
 	}
 	
-	private double muLine(int p, int q) {
-		if(memMuLine[p][q] >= 0.0f) {
+	private BigDecimal muLine(int p, int q) {
+		if(memMuLine[p][q] != null) {
 			return memMuLine[p][q];
 		}
-		memMuLine[p][q] = mu(p, q)/mu(0,0);
+		memMuLine[p][q] = mu(p, q).divide(mu(0,0), RoundingMode.HALF_DOWN);
 		
+		IJ.log("muLine("+p+","+q+") for image "+name+" = "+memMuLine[p][q]);
 		return memMuLine[p][q];
 	}
 	
-	private double heta (int p, int q) {
-		if(memHeta[p][q] >= 0.0f)
+	private BigDecimal heta (int p, int q) {
+		if(memHeta[p][q] != null)
 			return memHeta[p][q];
 		
-		memHeta[p][q] = mu(p,q) / Math.pow(mu(0,0),1.0f + ((double)p+(double)q)/(2.0f));
+		memHeta[p][q] = Utils.bigSqrt(mu(p,q).pow(2).divide(
+							mu(0,0).pow(2+p+q),RoundingMode.HALF_DOWN));
+		
+		IJ.log("heta("+p+","+q+") for image "+name+" = "+memHeta[p][q]);
 		return memHeta[p][q];
 		
 	}
 
-	private double getAngle() {
-		double m20 = mu(2,0);
-		double m02 = mu(0,2);
-		if(m20 == m02) 
-			return Math.PI/4;
+	public double getAngle() {
+		BigDecimal m20 = muLine(2,0);
+		BigDecimal m02 = muLine(0,2);
+		double ans;
+		if((muLine(2,0).subtract(muLine(0,2))).equals(BigDecimal.ZERO)) 
+			ans = Math.PI/4;
+		else
+			ans = Math.atan(muLine(1,1).multiply(new BigDecimal(2)).divide((muLine(2,0).subtract(muLine(0,2))), RoundingMode.HALF_DOWN).doubleValue())/2.0f;
 		
-		return Math.atan(2*mu(1,1)/(mu(2,0)-mu(0,2)))/2.0f;
+		IJ.log("rotation angle = "+ans);
+		return ans;
 	}
 	
-	private void calculateMoments() {
-		I[0] = heta(2,0)+heta(0,2);
-		I[1] = (heta(2,0)-heta(0,2))*(heta(2,0)-heta(0,2))+4*heta(1,1)*heta(1,1);
-		I[2] = (heta(3,0)-3*heta(1,2))*(heta(3,0)-3*heta(1,2))+(3*heta(2,1)-heta(0,3))*(3*heta(2,1)-heta(0,3));
-		I[3] = (heta(3,0)+heta(1,2))*(heta(3,0)+heta(1,2))+(heta(2,1)+heta(0,3))*(heta(2,1)+heta(0,3));
+	public BigDecimal[] calculateMoments() {
 		
+		IJ.log("Hus invariants for image "+name+": "+I[0]+" "+I[1]+" "+I[2]+" "+I[3]);
 		//TODO: The more complicated ones
+		return I;
 	}
 }
