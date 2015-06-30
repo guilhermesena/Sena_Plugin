@@ -66,7 +66,7 @@ public class Sena_Plugin implements PlugInFilter {
 		
 		for(int i = 0; i < IMAGE_WIDTH; i++) {
 			for(int j = 0; j < IMAGE_HEIGHT; j++) {
-				if(ip.getPixel(i, j) == 255 && visited[i][j] == 0) {
+				if(ip.getPixel(i, j) > 0 && visited[i][j] == 0) {
 					
 					List<Pair> points = new ArrayList<Pair>();
 					IJ.log("\n\nStarting dfs at point "+i+" "+j);
@@ -81,6 +81,7 @@ public class Sena_Plugin implements PlugInFilter {
 					IJ.showMessage("Calculating Hu moments for image "+numParticles);
 					Hu_Moments hm = new Hu_Moments(IJ.getProcessor().crop(), ""+numParticles);
 					hm.calculateMoments();
+					
 				}
 			}
 		}
@@ -99,7 +100,7 @@ public class Sena_Plugin implements PlugInFilter {
 	}
 	
 	private boolean isValidAndUnvisited(int x, int y, ImageProcessor ip) {
-		if(x < 0 || y < 0 || x >= IMAGE_WIDTH || y >= IMAGE_HEIGHT || ip.getPixel(x, y) != 255 || visited[x][y] == 1)
+		if(x < 0 || y < 0 || x >= IMAGE_WIDTH || y >= IMAGE_HEIGHT || ip.getPixel(x, y) == 0 || visited[x][y] == 1)
 			return false;
 		
 		return true;

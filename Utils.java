@@ -38,7 +38,7 @@ public class Utils {
 			if (p.y > maxY) maxY = p.y;
 		}
 		
-		return new Roi(minX, minY, maxX-minX, maxY-minY);
+		return new Roi(minX, minY, maxX-minX+1, maxY-minY+1);
 		
 	}
 
