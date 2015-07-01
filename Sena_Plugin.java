@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.Queue;
 import java.util.LinkedList;
 
+import weka.classifiers.AbstractClassifier;
+
 /*Plugin to automatically measure data from CLSM
  * Author: Guilherme Sena
  */
@@ -96,7 +98,10 @@ public class Sena_Plugin implements PlugInFilter {
 			return;
 		
 		//initFilters(ip);
-		segmentImage(ip);
+		//segmentImage(ip);
+		
+		IJ.log("Attempting WEKA segmentation");
+		(new Image_Trainer()).testing();
 	}
 	
 	private boolean isValidAndUnvisited(int x, int y, ImageProcessor ip) {
