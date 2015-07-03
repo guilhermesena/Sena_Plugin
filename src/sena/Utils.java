@@ -1,7 +1,5 @@
-import ij.*;
-import ij.gui.Roi;
+package sena;
 
-import java.util.List;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
@@ -25,22 +23,8 @@ public class Utils {
 	private static final BigDecimal SQRT_DIG = new BigDecimal(150);
 	private static final BigDecimal SQRT_PRE = new BigDecimal(10).pow(SQRT_DIG.intValue());
 	
-	public static Roi makeRoi(List<Pair> points) {
-		int minX = Integer.MAX_VALUE;
-		int maxX = -1;
-		int minY = Integer.MAX_VALUE;
-		int maxY = -1;
-		
-		for(Pair p: points) {
-			if (p.x < minX) minX = p.x;
-			if (p.y < minY) minY = p.y;
-			if (p.x > maxX) maxX = p.x;
-			if (p.y > maxY) maxY = p.y;
-		}
-		
-		return new Roi(minX, minY, maxX-minX+1, maxY-minY+1);
-		
-	}
+	public static final String PLUGIN_NAME="Sena Plugin";
+	
 
 	private static BigDecimal sqrtNewtonRaphson  (BigDecimal c, BigDecimal xn, BigDecimal precision){
 	    BigDecimal fx = xn.pow(2).add(c.negate());

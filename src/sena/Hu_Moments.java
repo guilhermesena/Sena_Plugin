@@ -1,20 +1,16 @@
+package sena;
+
 import ij.*;
 import ij.process.ImageProcessor;
 
 import java.lang.Math;
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
 
 import java.lang.StringBuffer;
 
-/* Auxiliary function to calculate Hu's seven invariant moments, rotate image, etc
- * Author: Guilherme Sena
- */
-
-public class Hu_Moments {
-	
-	private ImageProcessor imp;
+public class Hu_Moments extends Logger{
+	private static final String PROCEDURE_NAME = "Hu Moments";
 	
 	private final int DIVISION_PRECISION = 30;
 	
@@ -43,7 +39,7 @@ public class Hu_Moments {
 	private String name;
 	
 	public Hu_Moments (ImageProcessor imp, String name) {
-		this.imp = imp;
+		super(PROCEDURE_NAME);
 		this.name= name;
 		
 		this.IMAGE_WIDTH = imp.getWidth();
@@ -80,7 +76,7 @@ public class Hu_Moments {
 		IJ.log("centroid = ("+xc+","+yc+")");
 		I = new BigDecimal[7];
 		angle = getAngle();
-		
+		log("Area = "+area+", (xc, yc) = ("+xc+", "+yc+"), angle = "+angle);
 	}
 	
 	private BigDecimal M(int p, int q) {
@@ -99,7 +95,7 @@ public class Hu_Moments {
 		}
 		
 		memM[p][q] = ans;
-		IJ.log("M("+p+","+q+") for image "+name+" = "+memM[p][q].toEngineeringString());
+		log("M("+p+","+q+") for image "+name+" = "+memM[p][q].toEngineeringString());
 		return ans;
 	}
 	
@@ -121,7 +117,7 @@ public class Hu_Moments {
 		}
 		
 		memMu[p][q] = ans;
-		IJ.log("mu("+p+","+q+") for image "+name+" = "+memMu[p][q]);
+		log("mu("+p+","+q+") for image "+name+" = "+memMu[p][q]);
 		return ans;
 	}
 	
@@ -131,7 +127,7 @@ public class Hu_Moments {
 		}
 		memMuLine[p][q] = mu(p, q).divide(mu(0,0), DIVISION_PRECISION, RoundingMode.HALF_DOWN);
 		
-		IJ.log("muLine("+p+","+q+") for image "+name+" = "+memMuLine[p][q]);
+		log("muLine("+p+","+q+") for image "+name+" = "+memMuLine[p][q]);
 		return memMuLine[p][q];
 	}
 	
@@ -142,7 +138,7 @@ public class Hu_Moments {
 		memHeta[p][q] = Utils.bigSqrt(mu(p,q).pow(2).divide(
 							mu(0,0).pow(2+p+q), DIVISION_PRECISION, RoundingMode.HALF_DOWN));
 		
-		IJ.log("heta("+p+","+q+") for image "+name+" = "+memHeta[p][q]);
+		log("heta("+p+","+q+") for image "+name+" = "+memHeta[p][q]);
 		return memHeta[p][q];
 		
 	}
@@ -155,14 +151,14 @@ public class Hu_Moments {
 		double ans;
 		
 		if(denom.equals(new BigDecimal("0E-"+DIVISION_PRECISION))) {
-			IJ.log("Image "+name+" is already in its minimum axis");
+			log("Image "+name+" is already in its minimum axis");
 			ans = Math.PI/4;
 		}
 		else
 			ans = Math.atan(muLine(1,1).multiply(new BigDecimal(2)).divide(denom, DIVISION_PRECISION, RoundingMode.HALF_DOWN).doubleValue())/2.0f;
 		
 		ans = ans*180/Math.PI;
-		IJ.log("rotation angle = "+ans);
+		log("rotation angle = "+ans);
 		return ans;
 	}
 	
@@ -189,7 +185,7 @@ public class Hu_Moments {
 		for(int i = 0; i < 6; i++)
 			logAns.append("I["+i+"]="+I[i].setScale(NUM_DIGITS, BigDecimal.ROUND_DOWN)+", \n");
 		
-		IJ.log(logAns.toString());
+		log(logAns.toString());
 		//TODO: The more complicated ones
 		return I;
 	}

@@ -1,30 +1,47 @@
-import ij.*;
-import ij.process.*;
-import trainableSegmentation.*;
-import hr.irb.fastRandomForest.*;
+package sena;
 
-public class Image_Trainer {
+import hr.irb.fastRandomForest.FastRandomForest;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.gui.Roi;
+
+import java.util.ArrayList;
+
+import trainableSegmentation.WekaSegmentation;
+
+public class Image_Trainer extends Logger {
+	private static final String PROCEDURE_NAME = "Image Trainer";
 	
+	private WekaSegmentation seg;
+	private final int nSamplesToUse = 2000;
 	public Image_Trainer() {
+		super(PROCEDURE_NAME);
+		
+	}
+	
+	private void configure() {
+		
+	}
+	
+	public void train(ArrayList<Roi> rois) {
 		
 	}
 	
 	public void testing() {
-		ImagePlus image = IJ.openImage("C:\\Program Files\\ImageJ\\plugins\\Sena_Plugin\\training-image.tif");
-		ImagePlus labels = IJ.openImage("C:\\Program Files\\ImageJ\\plugins\\Sena_Plugin\\training-image.tif");
+		log("loading images...");
+		ImagePlus image = IJ.openImage("D:\\9 - Polytechnique\\Academico\\3 Annee\\Julio\\training-image.tif");
+		ImagePlus labels = IJ.openImage("D:\\9 - Polytechnique\\Academico\\3 Annee\\Julio\\training-image.tif");
 		
-		IJ.log("images loaded");
+		log("images loaded!");
 		
-		WekaSegmentation seg = new WekaSegmentation(image);
-		
-		int nSamplesToUse = 2000;
+		seg = new WekaSegmentation(image);
 		
 		FastRandomForest rf = new FastRandomForest();
 		rf.setNumTrees(100);
 		rf.setNumFeatures(0);
 		rf.setSeed((new java.util.Random()).nextInt());
 		
-		IJ.log("Random Forest configured");
+		log("Random Forest configured");
 		
 		seg.setClassifier(rf);
 		
@@ -62,14 +79,14 @@ public class Image_Trainer {
 		seg.addRandomBalancedBinaryData(image, labels, "class 2", "class 1", nSamplesToUse);
 		seg.trainClassifier();
 		
-		IJ.log("classifier trained");
+		log("classifier trained");
 		
 		seg.applyClassifier(true);
 		ImagePlus prob = seg.getClassifiedImage();
 		prob.setTitle("Probability maps of train image");
 		prob.show();
 		
-		image = IJ.openImage("Hu_Moments.tif");
+		image = IJ.openImage("D:\\9 - Polytechnique\\Academico\\3 Annee\\Julio\\Hu_Moments.tif");
 		
 		ImagePlus probd = seg.applyClassifier(image, 0, true);
 		
@@ -78,7 +95,7 @@ public class Image_Trainer {
 		
 		image.show();
 		
-		IJ.log("---");
+		log("---");
 		
 	}
 }

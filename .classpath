@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="C:/Program Files/ImageJ/ij.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/J2SE-1.5"/>
+	<classpathentry kind="lib" path="D:/9 - Polytechnique/Academico/3 Annee/Julio/Samilla/Software/fiji-nojre/Fiji.app/jars/ij-1.49v.jar"/>
+	<classpathentry kind="lib" path="D:/9 - Polytechnique/Academico/3 Annee/Julio/Samilla/Software/fiji-nojre/Fiji.app/jars/imglib2-2.3.0.jar"/>
+	<classpathentry kind="lib" path="D:/9 - Polytechnique/Academico/3 Annee/Julio/Samilla/Software/fiji-nojre/Fiji.app/jars/weka-dev-3.7.11.jar"/>
+	<classpathentry kind="lib" path="D:/9 - Polytechnique/Academico/3 Annee/Julio/Samilla/Software/fiji-nojre/Fiji.app/plugins/Stack_Manipulation-2.0.1.jar"/>
+	<classpathentry kind="lib" path="D:/9 - Polytechnique/Academico/3 Annee/Julio/Samilla/Software/fiji-nojre/Fiji.app/plugins/Trainable_Segmentation-2.2.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
