@@ -11,7 +11,7 @@ import numpy as np
 MIN_SIZE = 50
 
 # Input images folder
-IMAGES_FOLDER = "Imagens"
+IMAGES_FOLDER = "Corante"
 
 # Output folder for Otsu's thresholds
 OTSU_FOLDER = "Otsu"
@@ -20,14 +20,16 @@ OTSU_FOLDER = "Otsu"
 CONTOURS_FOLDER = "Contours"
 
 #Class value
-CLASS_VALUE = "Candida"
+CLASS_VALUE = "Corante"
 
 #Feature headers
-HEADERS = ["I0", "I1", "I2", "I3", "I4", "I5", "I6", "Class"]
+HEADERS = ["Image", "I1", "I2", "I3", "I4", "I5", "I6", "Class"]
 
+
+#Print headers
+print ",".join(map(str,HEADERS))
 
 for filename in os.listdir(os.getcwd()+"\\"+IMAGES_FOLDER):
-
 	#Only considers image files
 	if filename.endswith("jpg") or filename.endswith("png") or filename.endswith("tif"):
 		
@@ -37,7 +39,8 @@ for filename in os.listdir(os.getcwd()+"\\"+IMAGES_FOLDER):
 		
 		#Threshold using otsu method and uses it to create contours
 		ret,thresh = cv2.threshold(imgray,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-		image, contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+		test, contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+		
 		
 		#Contours that are being put into the CSV data
 		valid_contours = []
@@ -49,21 +52,24 @@ for filename in os.listdir(os.getcwd()+"\\"+IMAGES_FOLDER):
 			hus = cv2.HuMoments(mom)
 			
 			# Since we take the log we want only non-zero values
-			if 0 in hus or mom['m00'] < MIN_SIZE:
+			if 0 in hus[0:6] or mom['m00'] < MIN_SIZE:
 				continue
 			
+			# If this is the case, it's a valid contour
 			valid_contours.append(cnt)
+			
+			# Hu's log is the relevant value
 			huslog = np.log10(np.abs(hus[0:6]))*(-1)
 			output = []
 			for val in huslog:
 				output.append(val[0])
 				
-			print ','.join(map(str,output))+","+CLASS_VALUE
+			print filename+","+','.join(map(str,output))+","+CLASS_VALUE
 		
 		#Saves data
 		im2 = im
 		cv2.imwrite(IMAGES_FOLDER+"\\"+OTSU_FOLDER+"\\otsu - "+filename, thresh)
-		cv2.drawContours(im2, valid_contours, -1, (0, 255, 0), 2)
-		cv2.imwrite(IMAGES_FOLDER+"\\"+OTSU_FOLDER+"\\"+CONTOURS_FOLDER+"\\contours - "+filename, im2)
+		#cv2.drawContours(im2, valid_contours, -1, (0, 255, 0), 2)
+		#cv2.imwrite(IMAGES_FOLDER+"\\"+OTSU_FOLDER+"\\"+CONTOURS_FOLDER+"\\contours - "+filename, im2)
 		
 		

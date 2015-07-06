@@ -1,0 +1,1 @@
+python moments.py >out.csv
