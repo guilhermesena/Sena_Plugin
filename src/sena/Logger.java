@@ -10,7 +10,7 @@ public abstract class Logger {
 	}
 	
 	public void log (String message) {
-		IJ.log("["+Utils.PLUGIN_NAME+" - "+name+"] "+message);
+		IJ.log("["+Config.PLUGIN_NAME+" - "+name+"] "+message);
 	}
 
 }

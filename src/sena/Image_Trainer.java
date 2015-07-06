@@ -16,7 +16,6 @@ public class Image_Trainer extends Logger {
 	private final int nSamplesToUse = 2000;
 	public Image_Trainer() {
 		super(PROCEDURE_NAME);
-		
 	}
 	
 	private void configure() {
