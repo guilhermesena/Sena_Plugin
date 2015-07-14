@@ -3,6 +3,7 @@ __author__ = 'Guilherme Sena'
 import matplotlib.pyplot as plot
 import settings
 import create_dataframe
+import numpy as np
 
 def create_graphs(df):
     class_index = len(settings.HEADERS) - 1
@@ -10,7 +11,7 @@ def create_graphs(df):
     #List with distinct classes
     distinct_classes = list(set(df.iloc[:, class_index]))
     
-    print "Creating classes plot..."
+    print "Creating parallel coordinates plot..."
     for i in range(df.shape[0]):
        pcolor = settings.COLORS[distinct_classes.index(df.iloc[i, class_index])]
        dataRow = df.iloc[i, 0:class_index]
