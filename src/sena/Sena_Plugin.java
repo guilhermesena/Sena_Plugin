@@ -2,37 +2,73 @@ package sena;
 
 import ij.IJ;
 import ij.ImagePlus;
-import ij.gui.Roi;
+import ij.gui.GenericDialog;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
-
-import java.util.ArrayList;
+import org.opencv.core.Core;
 
 /*Plugin to automatically measure data from CLSM
  * Author: Guilherme Sena
  */
 
-public class Sena_Plugin implements PlugInFilter {	
+public class Sena_Plugin implements PlugInFilter {
+
+	private GenericDialog makeDialog() {
+		//Plugin dialog for parameter configuration
+		GenericDialog d = new GenericDialog(Config.PLUGIN_NAME);
+		d.addMessage(Config.PLUGIN_DESCRIPTION);
+		d.addStringField("Training set folder: ", Config.DEFAULT_TRAINING_SET);
+		d.addStringField("Test set folder: ", Config.DEFAULT_TEST_SET);
+		d.addNumericField("Gaussian Blur Sigma", 2, 0);
+		d.addChoice("Threshold Method", Config.THRESHOLD_METHODS, "Triangle");
+		d.addCheckbox("Save thresholds and contours", true);
+		d.addCheckbox("Skip training (if you already ran the plugin for your training set and have training_data.arff)", false);
+
+		return d;
+	}
+
 	public void run(ImageProcessor ip) {
-		IJ.log("Starting Sena Plugin...");
-		ImagePlus img = IJ.getImage();
-		
-		int type =       (new Image_Parser(img)).parseImage();
-				         (new Image_Filter(img, type)).initFilters();
-		ArrayList<Roi> rois = (ArrayList<Roi>) (new Image_Segmenter(ip)).segmentImage();
-		     
-		int cnt = 0;
-		for(Roi roi: rois) {
-			img.setRoi(roi);
-			(new Hu_Moments(ip.crop(),""+(++cnt))).calculateMoments();
+
+		GenericDialog d = makeDialog();
+		d.showDialog();
+		if(d.wasCanceled()) 
+			return;
+
+		//Let's rock!
+		IJ.log("Starting sena plugin...");
+
+		//Data from dialog
+		String trainingPath = d.getNextString();
+		String testPath = d.getNextString();
+		String thresholdMethod = d.getNextChoice();
+		double sigma = d.getNextNumber();
+		boolean saveImages = d.getNextBoolean();
+		boolean skipTraining = d.getNextBoolean();
+
+		//Parameters from data
+		Parameters plugInParams = new Parameters (sigma, thresholdMethod, saveImages);
+
+		IJ.log("Threshold Method: "+thresholdMethod+"\nSigma = "+sigma);
+
+		if(!skipTraining) {
+			//Trains image
+			Trainer trainer = new Trainer(trainingPath, plugInParams);
+			trainer.train();
+			trainer.writeDataFiles();
 		}
 		
-		//IJ.log("Proceeding to WEKA classifier...");
-		//(new Image_Trainer()).testing();
+		//Test image
+		String arffPath = trainingPath+"\\"+Config.TRAIN_ARFF_DATA;
+		Tester tester = new Tester(arffPath, testPath, plugInParams);
+		tester.test();
+
+		IJ.log("Sena Plugin analysis complete!");
+
 	}
-	
+
 	public int setup(String args, ImagePlus ip) {
-		// TODO Auto-generated method stub
-		return DOES_ALL;
+		//Load OpenCV
+		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+		return NO_IMAGE_REQUIRED;
 	}
 }

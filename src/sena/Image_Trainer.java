@@ -1,100 +1,94 @@
 package sena;
 
-import hr.irb.fastRandomForest.FastRandomForest;
-import ij.IJ;
 import ij.ImagePlus;
-import ij.gui.Roi;
 
 import java.util.ArrayList;
+import java.util.List;
 
-import trainableSegmentation.WekaSegmentation;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
+import org.opencv.imgproc.Moments;
 
-public class Image_Trainer extends Logger {
-	private static final String PROCEDURE_NAME = "Image Trainer";
-	
-	private WekaSegmentation seg;
-	private final int nSamplesToUse = 2000;
-	public Image_Trainer() {
-		super(PROCEDURE_NAME);
+//Per image trainer
+public class Image_Trainer  extends Logger {
+	private String className;
+	public String path;
+	public String folderPath;
+	public String filename;
+	public Scalar classColor;
+
+	public ImagePlus img;
+	public ImagePlus threshold;
+
+	public List <MatOfPoint> contours;
+
+	public Image_Trainer(String path, Parameters params, String className) {
+		super();
+		this.className = className;
+		this.path = path;
+		this.filename = Utils.getFileName(path);
+		this.folderPath = Utils.getParentFolder(path);
+				
+		Filter filter = new Filter(path, params.thresholdMethod, params.sigma);
+		if(!filter.filter(params.saveImages))
+			log("Invalid filter, aborting training...");
+
+		this.img = filter.rawImage;
+		this.threshold = filter.filteredImage;
+
+		calculateContours();
 	}
-	
-	private void configure() {
 		
+	public Image_Data dataFromContour(Mat contour) {
+		Image_Data contourData = new Image_Data();
+		contourData.fillHuMoments(getHuMoments(contour));
+		contourData.fillDataFromMoments(getMoments(contour));
+		
+		return contourData;
 	}
-	
-	public void train(ArrayList<Roi> rois) {
-		
+
+	public List<Image_Data> getData() {
+		log("Acquiring data for image "+filename+"...");
+		List<Image_Data> ans = new ArrayList<Image_Data>();		
+		for (int contourIdx = 0; contourIdx < contours.size(); contourIdx++) {
+			Image_Data contourData = dataFromContour(contours.get(contourIdx));			
+			if(contourData.Area < Config.MIN_AREA)
+				continue;
+			
+			contourData.className = this.className;
+			ans.add(contourData);
+		}
+		return ans;
 	}
+
+	private void calculateContours() {
+		log("Finding contours for image "+filename+"...");
+		Mat thresh_ocv = Utils.imagePlusToOpenCV(this.threshold);
+		contours = new ArrayList<MatOfPoint>();    
+
+		Imgproc.findContours(thresh_ocv, contours, new Mat(), Imgproc.RETR_LIST,Imgproc.CHAIN_APPROX_SIMPLE);
+		
+	}	
 	
-	public void testing() {
-		log("loading images...");
-		ImagePlus image = IJ.openImage("D:\\9 - Polytechnique\\Academico\\3 Annee\\Julio\\training-image.tif");
-		ImagePlus labels = IJ.openImage("D:\\9 - Polytechnique\\Academico\\3 Annee\\Julio\\training-image.tif");
+	public Moments getMoments(Mat contour) {
+		return Imgproc.moments(contour, false);
+	}
+
+	private double[] getHuMoments(Mat contour) {
+		double [] hu_values = new double[7];
+		Moments mom = getMoments(contour);
+		Mat hm = new Mat();
+		Imgproc.HuMoments(mom, hm);
+		for(int i = 0; i < 7; i++) {
+			double hu = hm.get(i,0)[0];
+			hu_values[i] = Math.signum(-1*hu)*1.0f/Math.log10(Math.abs(hu));
+			
+			if(Double.isNaN(hu_values[i]))
+				hu_values[i] = 0;
+		}
 		
-		log("images loaded!");
-		
-		seg = new WekaSegmentation(image);
-		
-		FastRandomForest rf = new FastRandomForest();
-		rf.setNumTrees(100);
-		rf.setNumFeatures(0);
-		rf.setSeed((new java.util.Random()).nextInt());
-		
-		log("Random Forest configured");
-		
-		seg.setClassifier(rf);
-		
-		//???
-		seg.setMembranePatchSize(11);
-		
-		//???
-		seg.setMaximumSigma(16.0f);
-		
-		// Selected attributes
-		boolean[] enableFeatures = new boolean[]{
-		            true,   /* Gaussian_blur */
-		            true,   /* Sobel_filter */
-		            true,   /* Hessian */
-		            true,   /* Difference_of_gaussians */
-		            true,   /* Membrane_projections */
-		            false,  /* Variance */
-		            false,  /* Mean */
-		            false,  /* Minimum */
-		            false,  /* Maximum */
-		            false,  /* Median */
-		            false,  /* Anisotropic_diffusion */
-		            false,  /* Bilateral */
-		            false,  /* Lipschitz */
-		            false,  /* Kuwahara */
-		            false,  /* Gabor */
-		            false,  /* Derivatives */
-		            false,  /* Laplacian */
-		            false,  /* Structure */
-		            false,  /* Entropy */
-		            false   /* Neighbors */
-		};
-		
-		seg.setEnabledFeatures(enableFeatures);
-		seg.addRandomBalancedBinaryData(image, labels, "class 2", "class 1", nSamplesToUse);
-		seg.trainClassifier();
-		
-		log("classifier trained");
-		
-		seg.applyClassifier(true);
-		ImagePlus prob = seg.getClassifiedImage();
-		prob.setTitle("Probability maps of train image");
-		prob.show();
-		
-		image = IJ.openImage("D:\\9 - Polytechnique\\Academico\\3 Annee\\Julio\\Hu_Moments.tif");
-		
-		ImagePlus probd = seg.applyClassifier(image, 0, true);
-		
-		probd.setTitle("probability maps of test image");
-		probd.show();
-		
-		image.show();
-		
-		log("---");
-		
+		return hu_values;
 	}
 }
